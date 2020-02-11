@@ -1,8 +1,18 @@
-def readInput():
-    colors = readUntilNewLine()
-    nodes = readUntilNewLine()
-    nodePairs = readUntilNewLine()
+from node import Node
+class Backtrack():
+    def __init__(self):
+        self.colors = readUntilNewLine()
+        nodes = readUntilNewLine()
+        self.nodes = {n: Node(n) for n in nodes}
+        self.buildNodePairs()
+    
+    def buildNodePairs(self):
+        nodePairs = readUntilNewLine()
+        for nodePair in nodePairs:
+             pair = nodePair.split(" ")
+             self.nodes[pair[0]].neighbors.append(pair[1])
 
+        
 def readUntilNewLine():
     all_inputs = []
     while True:
@@ -13,12 +23,9 @@ def readUntilNewLine():
             break
     return all_inputs 
 
-def buildNodePairGraph(node):
-    """node given as a string separated by a space"""
-    
-
 if __name__ == "__main__":
-    readInput()
+    backtrack = Backtrack()
+    print (backtrack.nodes)
 
 
 """

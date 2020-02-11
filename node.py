@@ -1,6 +1,5 @@
 class Node():
-    def __init__(self, name, colorspace):
+    def __init__(self, name):
         self.name = name
-        self.colorspace = colorspace
         self.neighbors = []
     
