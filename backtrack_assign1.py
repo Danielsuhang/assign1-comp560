@@ -1,32 +1,58 @@
 from node import Node
+import argparse
+
 class Backtrack():
-    def __init__(self):
+    """Use -d flag to load in default values for Graph"""
+    def __init__(self, use_default_nodes):
+        if (use_default_nodes):
+            self.colors = ['Red', 'Green', 'Blue']
+            self.nodes = {n: Node(n) for n in ['NSW', 'V', 'SA', 'WA', 'NT', 'Q', 'TZ']}
+            self.buildNodePairs(['NSW Q', 'NSW V', 'NSW SA', 'V SA', 'Q NT', 'Q SA', 'NT WA', 'NT SA', 'WA SA'])
+        else:
+            self.readInputs()
+        
+        self.printGraph()
+    
+    def readInputs(self):
         self.colors = readUntilNewLine()
         nodes = readUntilNewLine()
         self.nodes = {n: Node(n) for n in nodes}
-        self.buildNodePairs()
-    
-    def buildNodePairs(self):
         nodePairs = readUntilNewLine()
+        self.buildNodePairs(nodePairs)
+
+    def buildNodePairs(self, nodePairs):
         for nodePair in nodePairs:
-             pair = nodePair.split(" ")
-             self.nodes[pair[0]].neighbors.append(pair[1])
+             origin, pair = nodePair.split(" ")
+             if origin not in self.nodes.keys():
+                 print(origin + " is not a valid Node")
+                 break 
+             self.nodes[origin].neighbors.append(pair)
+
+    def printGraph(self):
+        for name, node in self.nodes.items():
+            print(name, node.neighbors)
+        
 
         
 def readUntilNewLine():
     all_inputs = []
     while True:
-        c_input = input()
-        if c_input.strip() != '': 
-            all_inputs.append(c_input)
-        else:
-            break
+        try: 
+            c_input = str(input())
+            if c_input.strip() != '': 
+                all_inputs.append(c_input)
+            else:
+                break
+        except ValueError:
+            print ("Invalid Input")
+
     return all_inputs 
 
 if __name__ == "__main__":
-    backtrack = Backtrack()
-    print (backtrack.nodes)
-
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', action='store_true')
+    args = parser.parse_args()
+    backtrack = Backtrack(args.d)
 
 """
 Recurisvely give nodes in the graph colors by making copies of the nodes 
