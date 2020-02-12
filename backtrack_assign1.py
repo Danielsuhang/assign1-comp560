@@ -54,15 +54,18 @@ def get_available_colors(node, colors):
 
 backtrack_steps = 0
 
+'''
+This function will assign a color to the node itself and all nodes that it is a parent of
+'''
 def assignColorsRecursive(node, colors):
     global backtrack_steps
     #each time this is called, we are searching a node:
     backtrack_steps += 1
 
-    #first check what colors are available for this node
+    #Keep Arc consistency here, only consider other available colors
     available_colors = get_available_colors(node, colors)
     
-    #if there are no available colors, this solution is drawing dead
+    #if there are no available colors, this solution is drawing dead. No reason to continue considering this solution
     if len(available_colors) == 0:
         return False
 
