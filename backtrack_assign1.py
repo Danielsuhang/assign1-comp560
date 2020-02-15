@@ -4,29 +4,34 @@ import sys
 
 class Graph():
     """Use -d flag to load in default values for Graph"""
-    def __init__(self, use_default_nodes):
-        if (use_default_nodes):
-            self.colors = {'Red', 'Green', 'Blue'}
-            self.nodes = {n: Node(n) for n in ['NSW', 'V', 'SA', 'WA', 'NT', 'Q', 'TZ']}
-            self.buildNodePairs(['NSW Q', 'NSW V', 'NSW SA', 'V SA', 'Q NT', 'Q SA', 'NT WA', 'NT SA', 'WA SA'])
-        else:
-            self.readInputs()
-        
-        self.printGraph()
+    def __init__(self):
+        self.readInputs()
     
     def readInputs(self):
-        self.colors = set(readUntilNewLine())
-        nodes = readUntilNewLine()
+        f = open("usdata.txt", "r")
+        self.colors = set(readUntilNewLine(f))
+        nodes = readUntilNewLine(f)
         self.nodes = {n: Node(n) for n in nodes}
-        nodePairs = readUntilNewLine()
+        nodePairs = readUntilNewLine(f)
         self.buildNodePairs(nodePairs)
 
     def buildNodePairs(self, nodePairs):
         for nodePair in nodePairs:
-             origin, pair = nodePair.split(" ")
-             #2 way connections
-             self.nodes[origin].neighbors.append(self.nodes[pair])
-             self.nodes[pair].neighbors.append(self.nodes[origin])
+            origin, pair = nodePair.split(" ")
+
+            # Process Nodes
+            origin = origin.rstrip().lstrip()
+            pair = pair.rstrip().lstrip()
+            if (origin not in self.nodes):
+                self.nodes[origin] = Node(origin)
+                print ("Warning: Pair node " + origin + " not in node graph. Added manually.")
+            if (pair not in self.nodes):
+                self.nodes[pair] = Node(pair)
+                print ("Warning: Pair node " + pair + " not in node graph. Added manually.")
+
+            # Add 2 way connections
+            self.nodes[origin].neighbors.append(self.nodes[pair])
+            self.nodes[pair].neighbors.append(self.nodes[origin])
 
     def printGraph(self):
         for name, node in self.nodes.items():
@@ -34,18 +39,18 @@ class Graph():
         
 
         
-def readUntilNewLine():
+def readUntilNewLine(file):
     all_inputs = []
     while True:
         try: 
-            c_input = str(input())
+            c_input = file.readline().rstrip().lstrip()
+            print (c_input)
             if c_input.strip() != '': 
                 all_inputs.append(c_input)
             else:
                 break
         except ValueError:
             print ("Invalid Input")
-
     return all_inputs 
 
 #colors should be a set of all possible colors
@@ -59,37 +64,47 @@ This function will assign a color to the node itself and all nodes that it is a 
 '''
 def assignColorsRecursive(node, colors):
     global backtrack_steps
-    #each time this is called, we are searching a node:
+    # Each time this is called, we are searching a node:
     backtrack_steps += 1
 
-    #Keep Arc consistency here, only consider other available colors
+    # Keep Arc consistency here, only consider other available colors
     available_colors = get_available_colors(node, colors)
     
-    #if there are no available colors, this solution is drawing dead. No reason to continue considering this solution
+    # If there are no available colors, this solution is drawing dead. No reason to continue considering this solution
     if len(available_colors) == 0:
         return False
 
-    #now for each available color, try using that color for this node
     for color in available_colors:
         node.color = color
         success = True
 
-        #try to recurse on each neighbor with the current node color
-        for neighbor in node.neighbors:
+        ##### TEST IF SORT WORKS ######
+        print (node.name + " sorted neighbors: ", end="")
+        if (len(node.neighbors) == 0):
+            print ("No Neighbors")
+        sorted_neighbors = sorted(node.neighbors, key=lambda neighbor_node : (len(get_available_colors(neighbor_node, colors)), neighbor_node.name))
+        node_constrainted_score = [(len(get_available_colors(node,colors)), node.name) for node in sorted_neighbors]
+        for node_score in node_constrainted_score:
+            print (node_score[0], node_score[1], end = ", ")
+        print ("\n")
+        ##### END TEST ####
+
+        # Traverse most constrainted variable (if tie traverse lexagraphically first neighbors)
+        for neighbor in sorted(node.neighbors, key=lambda neighbor_node : (len(get_available_colors(neighbor_node, colors)), neighbor_node.name)):
             if neighbor.color == "":
                 success = assignColorsRecursive(neighbor, colors) and success
         
-        #if we successfully recursed on each other node, return true as we found a solution for this node
+        # Success means we found a possible solution with this color assignment on this node
         if success: 
             return True
     
-    #if we made it to here, this means we were unable to find a solution for any of the available colors for this node. Reset the color and report the failure
+    # Unable to find a solution with available colors for this node, reset node color to unexplored
     node.color = "" 
     return False
 
 def backtrack_search(g):
     success = True
-    #this loop is required because it's possible to have nodes that are not connected to any other nodes. One call will be made per "island" in the graph
+    # Search all Nodes, process Island Nodes
     for name, node in g.nodes.items():
         if node.color == "":
             success = assignColorsRecursive(node, g.colors) and success
@@ -111,8 +126,7 @@ def verify_graph_colors(g):
     return True
 
 if __name__ == "__main__":
-    fp = sys.argv[1]
-    g = Graph(False)
+    g = Graph()
     g, success = backtrack_search(g)
     print("Found solution in ", backtrack_steps, " steps: ", verify_graph_colors(g))
     g.printGraph()
