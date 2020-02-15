@@ -1,14 +1,14 @@
 from node import Node
 import argparse
 import sys
+import os.path
 
 class Graph():
-    """Use -d flag to load in default values for Graph"""
-    def __init__(self):
-        self.readInputs()
+    def __init__(self, file_path):
+        self.readInputs(file_path)
     
-    def readInputs(self):
-        f = open("usdata.txt", "r")
+    def readInputs(self, file_path):
+        f = open(file_path, "r")
         self.colors = set(readUntilNewLine(f))
         nodes = readUntilNewLine(f)
         self.nodes = {n: Node(n) for n in nodes}
@@ -20,8 +20,6 @@ class Graph():
             origin, pair = nodePair.split(" ")
 
             # Process Nodes
-            origin = origin.rstrip().lstrip()
-            pair = pair.rstrip().lstrip()
             if (origin not in self.nodes):
                 self.nodes[origin] = Node(origin)
                 print ("Warning: Pair node " + origin + " not in node graph. Added manually.")
@@ -36,7 +34,6 @@ class Graph():
     def printGraph(self):
         for name, node in self.nodes.items():
             print(name, node.neighbors, node.color)
-        
 
         
 def readUntilNewLine(file):
@@ -111,8 +108,6 @@ def backtrack_search(g):
     #if success is false here, it means that one of the "islands" in the graph could not be resolved
     return g, success
 
-    
-
 def verify_graph_colors(g):
     numSearched = 0
     print("\nVerifying solution")
@@ -126,7 +121,13 @@ def verify_graph_colors(g):
     return True
 
 if __name__ == "__main__":
-    g = Graph()
+    if (len(sys.argv) <= 1):
+        print ("No argument given, pass in input file path")
+        exit()
+    if (not os.path.isfile(sys.argv[1])):
+        print ("Invalid path, could not find file in path: " + sys.argv[1])
+        exit()
+    g = Graph(sys.argv[1])
     g, success = backtrack_search(g)
     print("Found solution in ", backtrack_steps, " steps: ", verify_graph_colors(g))
     g.printGraph()
