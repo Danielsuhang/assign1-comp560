@@ -9,10 +9,10 @@ class Graph():
     
     def readInputs(self, file_path):
         f = open(file_path, "r")
-        self.colors = set(readUntilNewLine(f))
-        nodes = readUntilNewLine(f)
+        self.colors = set(Graph.readUntilNewLine(f))
+        nodes = Graph.readUntilNewLine(f)
         self.nodes = {n: Node(n) for n in nodes}
-        nodePairs = readUntilNewLine(f)
+        nodePairs = Graph.readUntilNewLine(f)
         self.buildNodePairs(nodePairs)
 
     def buildNodePairs(self, nodePairs):
@@ -35,90 +35,98 @@ class Graph():
         for name, node in self.nodes.items():
             print(name, node.neighbors, node.color)
 
-        
-def readUntilNewLine(file):
-    all_inputs = []
-    while True:
-        try: 
-            c_input = file.readline().rstrip().lstrip()
-            print (c_input)
-            if c_input.strip() != '': 
-                all_inputs.append(c_input)
-            else:
-                break
-        except ValueError:
-            print ("Invalid Input")
-    return all_inputs 
+    @staticmethod    
+    def readUntilNewLine(file):
+        all_inputs = []
+        while True:
+            try: 
+                c_input = file.readline().rstrip().lstrip()
+                print (c_input)
+                if c_input.strip() != '': 
+                    all_inputs.append(c_input)
+                else:
+                    break
+            except ValueError:
+                print ("Invalid Input")
+        return all_inputs 
 
-#colors should be a set of all possible colors
-def get_available_colors(node, colors):
-    return list(colors - set([n.color for n in node.neighbors]))
+class MostConstrainedBacktrack():
+    def __init__(self, graph):
+        self.graph = graph
+        self.possible_colors = graph.colors
 
-backtrack_steps = 0
-
-'''
-This function will assign a color to the node itself and all nodes that it is a parent of
-'''
-def assignColorsRecursive(node, colors):
-    global backtrack_steps
-    # Each time this is called, we are searching a node:
-    backtrack_steps += 1
-
-    # Keep Arc consistency here, only consider other available colors
-    available_colors = get_available_colors(node, colors)
+    def runBacktrack(self):
+        self.backtrackSearch()
+        print("Found solution in ", self.backtrack_steps, " steps: ", self.verifyGraphColors())
+        self.graph.printGraph() 
     
-    # If there are no available colors, this solution is drawing dead. No reason to continue considering this solution
-    if len(available_colors) == 0:
+    def backtrackSearch(self):
+        """ Search all nodes, recursively backtrack through graph adding available colors """
+        success = True
+        self.backtrack_steps = 0
+        # Search all Nodes, process Island Nodes
+        for name, node in self.graph.nodes.items():
+            if node.color == "":
+                success = self.assignColorsRecursive(node) and success
+        #if success is false here, it means that one of the "islands" in the graph could not be resolved
+        return g, success
+    
+
+    def assignColorsRecursive(self, node):
+        """This function will assign a color to the node itself and all nodes that it is a parent of"""
+        # Each time this is called, we are searching a node:
+        self.backtrack_steps += 1
+
+        # Keep Arc consistency here, only consider other available colors
+        available_colors = self.getAvailableColors(node)
+        
+        # If there are no available colors, this solution is drawing dead. No reason to continue considering this solution
+        if len(available_colors) == 0:
+            return False
+
+        for color in available_colors:
+            node.color = color
+            success = True
+
+            ##### TEST IF SORT WORKS ######
+            print (node.name + " sorted neighbors: ", end="")
+            if (len(node.neighbors) == 0):
+                print ("No Neighbors")
+            sorted_neighbors = sorted(node.neighbors, key=lambda neighbor_node : (len(self.getAvailableColors(neighbor_node)), neighbor_node.name))
+            node_constrainted_score = [(len(self.getAvailableColors(node)), node.name) for node in sorted_neighbors]
+            for node_score in node_constrainted_score:
+                print (node_score[0], node_score[1], end = ", ")
+            print ("\n")
+            ##### END TEST ####
+
+            # Traverse most constrainted variable (if tie traverse lexagraphically first neighbors)
+            for neighbor in sorted(node.neighbors, key=lambda neighbor_node : (len(self.getAvailableColors(neighbor_node)), neighbor_node.name)):
+                if neighbor.color == "":
+                    success = self.assignColorsRecursive(neighbor) and success
+            
+            # Success means we found a possible solution with this color assignment on this node
+            if success: 
+                return True
+        
+        # Unable to find a solution with available colors for this node, reset node color to unexplored
+        node.color = "" 
         return False
 
-    for color in available_colors:
-        node.color = color
-        success = True
+    #colors should be a set of all possible colors
+    def getAvailableColors(self, node):
+        return list(self.possible_colors- set([n.color for n in node.neighbors]))
 
-        ##### TEST IF SORT WORKS ######
-        print (node.name + " sorted neighbors: ", end="")
-        if (len(node.neighbors) == 0):
-            print ("No Neighbors")
-        sorted_neighbors = sorted(node.neighbors, key=lambda neighbor_node : (len(get_available_colors(neighbor_node, colors)), neighbor_node.name))
-        node_constrainted_score = [(len(get_available_colors(node,colors)), node.name) for node in sorted_neighbors]
-        for node_score in node_constrainted_score:
-            print (node_score[0], node_score[1], end = ", ")
-        print ("\n")
-        ##### END TEST ####
-
-        # Traverse most constrainted variable (if tie traverse lexagraphically first neighbors)
-        for neighbor in sorted(node.neighbors, key=lambda neighbor_node : (len(get_available_colors(neighbor_node, colors)), neighbor_node.name)):
-            if neighbor.color == "":
-                success = assignColorsRecursive(neighbor, colors) and success
-        
-        # Success means we found a possible solution with this color assignment on this node
-        if success: 
-            return True
-    
-    # Unable to find a solution with available colors for this node, reset node color to unexplored
-    node.color = "" 
-    return False
-
-def backtrack_search(g):
-    success = True
-    # Search all Nodes, process Island Nodes
-    for name, node in g.nodes.items():
-        if node.color == "":
-            success = assignColorsRecursive(node, g.colors) and success
-    #if success is false here, it means that one of the "islands" in the graph could not be resolved
-    return g, success
-
-def verify_graph_colors(g):
-    numSearched = 0
-    print("\nVerifying solution")
-    for name, node in g.nodes.items():
-        numSearched += 1
-        nc = node.color
-        for neighbor in node.neighbors:
-            if neighbor.color == nc:
-                return False
-    print("SEARCHED: " , numSearched)
-    return True
+    def verifyGraphColors(self):
+        numSearched = 0
+        print("\nVerifying solution")
+        for name, node in self.graph.nodes.items():
+            numSearched += 1
+            nc = node.color
+            for neighbor in node.neighbors:
+                if neighbor.color == nc:
+                    return False
+        print("SEARCHED: " , numSearched)
+        return True
 
 if __name__ == "__main__":
     if (len(sys.argv) <= 1):
@@ -128,9 +136,8 @@ if __name__ == "__main__":
         print ("Invalid path, could not find file in path: " + sys.argv[1])
         exit()
     g = Graph(sys.argv[1])
-    g, success = backtrack_search(g)
-    print("Found solution in ", backtrack_steps, " steps: ", verify_graph_colors(g))
-    g.printGraph()
+    constrained_backtrack_search = MostConstrainedBacktrack(g)
+    constrained_backtrack_search.runBacktrack()
     
 
 """
