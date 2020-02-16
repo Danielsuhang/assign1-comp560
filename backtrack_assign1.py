@@ -58,7 +58,7 @@ class MostConstrainedBacktrack():
         self.graph = graph
         self.possible_colors = graph.colors
 
-    def run_backtrack(self):
+    def run(self):
         self.backtrack_search()
         print("Found solution in ", self._backtrack_steps, " steps: ", self.verify_graph_colors())
         self.graph.print_graph() 
@@ -111,15 +111,14 @@ class MostConstrainedBacktrack():
         return list(self.possible_colors- set([n.color for n in node.neighbors]))
 
     def verify_graph_colors(self):
-        numSearched = 0
+        num_searched = 0
         print("\nVerifying solution")
         for _name, node in self.graph.nodes.items():
-            numSearched += 1
-            nc = node.color
+            num_searched += 1
             for neighbor in node.neighbors:
-                if neighbor.color == nc:
+                if neighbor.color == node.color:
                     return False
-        print("SEARCHED: " , numSearched)
+        print("SEARCHED: " , num_searched)
         return True
     
     def test_most_constrained_sort(self, node):
@@ -133,23 +132,104 @@ class MostConstrainedBacktrack():
         print ("\n")
 
 class LocalSearch():
+    MAX_NODE_SEARCH_ATTEMPTS = 1000000
+    MAX_new_assignment_attempts = 10000
     def __init__(self, graph):
         self.graph = graph
         self.possible_colors = graph.colors
-        self.preprocess_graph_with_random_colors()
+        self.search_attempts = 0
+        self.new_assignment_attempts = 0
     
+    """Start with initial assignment of random colors for each node"""
     def preprocess_graph_with_random_colors(self):
         for _name, node in self.graph.nodes.items():
             self.assign_node_random_color(node)
     
     def assign_node_random_color(self, node):
         if node.color != "":
-            node.color = self.pick_random_color()
+            node.color = self.pick_any_random_color()
             for neighbor in node.neighbors:
                 self.assign_node_random_color(neighbor)
+
+    def pick_any_random_color(self):
+        return list(self.possible_colors)[random.randint(0, len(self.possible_colors) - 1)]
     
-    def pick_random_color(self):
-        return self.possible_colors[random.randint(0,len(self.possible_colors))]
+    """
+    Run Local Search by randomly assigning colors to all nodes.
+    Traverse each node to resolve any invalid color arrangements.
+    If a node has no more colors to choose from, restart and try again.
+    """
+    def run(self):
+        success = self.valid_graph()  # Initial success condition
+        while (self.continue_search_conditions(success)):
+            self.new_assignment_attempts += 1
+            self.clear_node_colors()
+            self.preprocess_graph_with_random_colors()
+            success = self.traverse_graph_change_colors()
+        self.get_graph_stats()
+    
+    def continue_search_conditions(self, success):
+        return not success and self.search_attempts < self.MAX_NODE_SEARCH_ATTEMPTS \
+            and self.new_assignment_attempts < self.MAX_new_assignment_attempts
+    
+    """Iterate through all nodes randomly, assign nodes to a possible color"""
+    def traverse_graph_change_colors(self):
+        for node in self.get_random_node_ordering():
+            self.search_attempts += 1
+            if not self.valid_node(node):
+                self.assign_node_available_random_color(node)
+                if node.color == "":
+                    """No available color for node, restart configuration 
+                    (We can also choose to continue our search with other nodes)"""
+                    return False
+        return True
+
+    def get_random_node_ordering(self):
+        nodes = [node for _name, node in self.graph.nodes.items()]
+        random.shuffle(nodes)
+        return nodes
+    
+    def valid_node(self, node):
+        if node.color == "":
+            return False
+        for neighbor in node.neighbors:
+            if neighbor.color == node.color:
+                return False
+        return True
+
+    def assign_node_available_random_color(self, node):
+        available_colors = self.available_colors(node)
+        if len(available_colors) == 0:
+            # No possible color can be assigned
+            node.color = ""
+            return
+        node.color = available_colors[random.randint(0, len(available_colors) - 1)]
+
+    def available_colors(self, node):
+        return list(self.possible_colors - set([n.color for n in node.neighbors]))
+    
+    def valid_graph(self):
+        num_searched = 0
+        for _name, node in self.graph.nodes.items():
+            num_searched += 1
+            if not self.valid_node(node):
+                return False
+        return True
+ 
+    def clear_node_colors(self):
+        for _name, node in self.graph.nodes.items():
+            node.color = ""
+    
+    def get_graph_stats(self):
+        if self.valid_graph():
+            print ("Successfully found solution")
+        else:
+            print ("Failed to find solution")
+            if self.search_attempts > self.MAX_NODE_SEARCH_ATTEMPTS:
+                print ("Exhausted search maximum of " + self.MAX_NODE_SEARCH_ATTEMPTS+ ", ending local search")
+        self.graph.print_graph()
+        print (self.search_attempts)
+        print (self.new_assignment_attempts)
 
 if __name__ == "__main__":
     if (len(sys.argv) <= 1):
@@ -157,8 +237,10 @@ if __name__ == "__main__":
     if (not os.path.isfile(sys.argv[1])):
         raise ValueError("Invalid path, could not find file in path: " + sys.argv[1])
     g = Graph(sys.argv[1])
-    constrained_backtrack_search = MostConstrainedBacktrack(g)
-    constrained_backtrack_search.run_backtrack()
+    local_search = LocalSearch(g)
+    local_search.run()
+    # constrained_backtrack_search = MostConstrainedBacktrack(g)
+    # constrained_backtrack_search.run()
     
 
 """
