@@ -142,8 +142,13 @@ class LocalSearch():
     
     """Start with initial assignment of random colors for each node"""
     def preprocess_graph_with_random_colors(self):
+        self.clear_node_colors()
         for _name, node in self.graph.nodes.items():
             self.assign_node_random_color(node)
+
+    def clear_node_colors(self):
+        for _name, node in self.graph.nodes.items():
+            node.color = ""
     
     def assign_node_random_color(self, node):
         if node.color != "":
@@ -163,7 +168,6 @@ class LocalSearch():
         success = self.valid_graph()  # Initial success condition
         while (self.continue_search_conditions(success)):
             self.new_assignment_attempts += 1
-            self.clear_node_colors()
             self.preprocess_graph_with_random_colors()
             success = self.traverse_graph_change_colors()
         self.get_graph_stats()
@@ -215,21 +219,17 @@ class LocalSearch():
             if not self.valid_node(node):
                 return False
         return True
- 
-    def clear_node_colors(self):
-        for _name, node in self.graph.nodes.items():
-            node.color = ""
     
     def get_graph_stats(self):
+        self.graph.print_graph()
+        print (self.search_attempts)
+        print (self.new_assignment_attempts)
         if self.valid_graph():
             print ("Successfully found solution")
         else:
             print ("Failed to find solution")
             if self.search_attempts > self.MAX_NODE_SEARCH_ATTEMPTS:
                 print ("Exhausted search maximum of " + self.MAX_NODE_SEARCH_ATTEMPTS+ ", ending local search")
-        self.graph.print_graph()
-        print (self.search_attempts)
-        print (self.new_assignment_attempts)
 
 if __name__ == "__main__":
     if (len(sys.argv) <= 1):
