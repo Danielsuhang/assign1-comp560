@@ -133,7 +133,7 @@ class MostConstrainedBacktrack():
 
 class LocalSearch():
     MAX_NODE_SEARCH_ATTEMPTS = 1000000
-    MAX_new_assignment_attempts = 10000
+    MAX_NEW_ASSIGNMENT_ATTEMPTS = 10000
     def __init__(self, graph):
         self.graph = graph
         self.possible_colors = graph.colors
@@ -170,7 +170,7 @@ class LocalSearch():
     
     def continue_search_conditions(self, success):
         return not success and self.search_attempts < self.MAX_NODE_SEARCH_ATTEMPTS \
-            and self.new_assignment_attempts < self.MAX_new_assignment_attempts
+            and self.new_assignment_attempts < self.MAX_NEW_ASSIGNMENT_ATTEMPTS
     
     """Iterate through all nodes randomly, assign nodes to a possible color"""
     def traverse_graph_change_colors(self):
