@@ -1,7 +1,10 @@
-from node import Node
 import argparse
 import sys
 import os.path
+
+import random
+
+from node import Node
 
 class Graph():
     def __init__(self, file_path):
@@ -65,7 +68,7 @@ class MostConstrainedBacktrack():
         success = True
         self._backtrack_steps = 0
         # Search all Nodes, process Island Nodes
-        for name, node in self.graph.nodes.items():
+        for _name, node in self.graph.nodes.items():
             if node.color == "":
                 success = self.assign_colors_recursive(node) and success
         #if success is false here, it means that one of the "islands" in the graph could not be resolved
@@ -88,16 +91,7 @@ class MostConstrainedBacktrack():
             node.color = color
             success = True
 
-            ##### TEST IF SORT WORKS ######
-            print (node.name + " sorted neighbors: ", end="")
-            if (len(node.neighbors) == 0):
-                print ("No Neighbors")
-            sorted_neighbors = sorted(node.neighbors, key=lambda neighbor_node : (len(self.get_available_colors(neighbor_node)), neighbor_node.name))
-            node_constrainted_score = [(len(self.get_available_colors(node)), node.name) for node in sorted_neighbors]
-            for node_score in node_constrainted_score:
-                print (node_score[0], node_score[1], end = ", ")
-            print ("\n")
-            ##### END TEST ####
+            self.test_most_constrained_sort(node)
 
             # Traverse most constrainted variable (if tie traverse lexagraphically first neighbors)
             for neighbor in sorted(node.neighbors, key=lambda neighbor_node : (len(self.get_available_colors(neighbor_node)), neighbor_node.name)):
@@ -119,7 +113,7 @@ class MostConstrainedBacktrack():
     def verify_graph_colors(self):
         numSearched = 0
         print("\nVerifying solution")
-        for name, node in self.graph.nodes.items():
+        for _name, node in self.graph.nodes.items():
             numSearched += 1
             nc = node.color
             for neighbor in node.neighbors:
@@ -127,14 +121,41 @@ class MostConstrainedBacktrack():
                     return False
         print("SEARCHED: " , numSearched)
         return True
+    
+    def test_most_constrained_sort(self, node):
+        print (node.name + " sorted neighbors: ", end="")
+        if (len(node.neighbors) == 0):
+            print ("No Neighbors")
+        sorted_neighbors = sorted(node.neighbors, key=lambda neighbor_node : (len(self.get_available_colors(neighbor_node)), neighbor_node.name))
+        node_constrainted_score = [(len(self.get_available_colors(node)), node.name) for node in sorted_neighbors]
+        for node_score in node_constrainted_score:
+            print (node_score[0], node_score[1], end = ", ")
+        print ("\n")
+
+class LocalSearch():
+    def __init__(self, graph):
+        self.graph = graph
+        self.possible_colors = graph.colors
+        self.preprocess_graph_with_random_colors()
+    
+    def preprocess_graph_with_random_colors(self):
+        for _name, node in self.graph.nodes.items():
+            self.assign_node_random_color(node)
+    
+    def assign_node_random_color(self, node):
+        if node.color != "":
+            node.color = self.pick_random_color()
+            for neighbor in node.neighbors:
+                self.assign_node_random_color(neighbor)
+    
+    def pick_random_color(self):
+        return self.possible_colors[random.randint(0,len(self.possible_colors))]
 
 if __name__ == "__main__":
     if (len(sys.argv) <= 1):
-        print ("No argument given, pass in input file path")
-        exit()
+        raise ValueError("No argument given, pass in input file path")
     if (not os.path.isfile(sys.argv[1])):
-        print ("Invalid path, could not find file in path: " + sys.argv[1])
-        exit()
+        raise ValueError("Invalid path, could not find file in path: " + sys.argv[1])
     g = Graph(sys.argv[1])
     constrained_backtrack_search = MostConstrainedBacktrack(g)
     constrained_backtrack_search.run_backtrack()
