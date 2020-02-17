@@ -93,10 +93,20 @@ class MostConstrainedBacktrack():
 
             self.test_most_constrained_sort(node)
 
-            # Traverse most constrainted variable (if tie traverse lexagraphically first neighbors)
-            for neighbor in sorted(node.neighbors, key=lambda neighbor_node : (len(self.get_available_colors(neighbor_node)), neighbor_node.name)):
+            neighborsToAssign = node.neighbors.copy()
+
+            #each iteration we sort the neighbors by most constrained, then make the recursive call with the most constrained until all have been assigned.
+            while(len(neighborsToAssign) > 0):
+                neighborsToAssign = sorted(neighborsToAssign, key=lambda neighbor_node : (len(self.get_available_colors(neighbor_node)), neighbor_node.name))
+                neighbor = neighborsToAssign.pop(0)
                 if neighbor.color == "":
                     success = self.assign_colors_recursive(neighbor) and success
+                
+
+            # Traverse most constrainted variable (if tie traverse lexagraphically first neighbors)
+            #for neighbor in sorted(node.neighbors, key=lambda neighbor_node : (len(self.get_available_colors(neighbor_node)), neighbor_node.name)):
+            #    if neighbor.color == "":
+            #        success = self.assign_colors_recursive(neighbor) and success
             
             # Success means we found a possible solution with this color assignment on this node
             if success: 
@@ -237,10 +247,10 @@ if __name__ == "__main__":
     if (not os.path.isfile(sys.argv[1])):
         raise ValueError("Invalid path, could not find file in path: " + sys.argv[1])
     g = Graph(sys.argv[1])
-    local_search = LocalSearch(g)
-    local_search.run()
-    # constrained_backtrack_search = MostConstrainedBacktrack(g)
-    # constrained_backtrack_search.run()
+    #local_search = LocalSearch(g)
+    #local_search.run()
+    constrained_backtrack_search = MostConstrainedBacktrack(g)
+    constrained_backtrack_search.run()
     
 
 """
