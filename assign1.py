@@ -36,7 +36,7 @@ class Graph():
 
     def print_graph(self):
         for name, node in self.nodes.items():
-            print(name, node.neighbors, node.color)
+            print(name, node.color)
 
     @staticmethod    
     def read_new_line(file):
@@ -44,7 +44,6 @@ class Graph():
         while True:
             try: 
                 c_input = file.readline().rstrip().lstrip()
-                print (c_input)
                 if c_input.strip() != '': 
                     all_inputs.append(c_input)
                 else:
@@ -91,8 +90,6 @@ class MostConstrainedBacktrack():
             node.color = color
             success = True
 
-            self.test_most_constrained_sort(node)
-
             neighborsToAssign = node.neighbors.copy()
 
             #each iteration we sort the neighbors by most constrained, then make the recursive call with the most constrained until all have been assigned.
@@ -128,7 +125,6 @@ class MostConstrainedBacktrack():
             for neighbor in node.neighbors:
                 if neighbor.color == node.color:
                     return False
-        print("SEARCHED: " , num_searched)
         return True
     
     def test_most_constrained_sort(self, node):
@@ -242,15 +238,21 @@ class LocalSearch():
                 print ("Exhausted search maximum of " + self.MAX_NODE_SEARCH_ATTEMPTS+ ", ending local search")
 
 if __name__ == "__main__":
-    if (len(sys.argv) <= 1):
-        raise ValueError("No argument given, pass in input file path")
-    if (not os.path.isfile(sys.argv[1])):
+    if (len(sys.argv) <= 2):
+        raise ValueError("Not enough arguments given, pass in local or backtrack fllowed by input file path")
+    if (not os.path.isfile(sys.argv[2])):
         raise ValueError("Invalid path, could not find file in path: " + sys.argv[1])
-    g = Graph(sys.argv[1])
-    #local_search = LocalSearch(g)
-    #local_search.run()
-    constrained_backtrack_search = MostConstrainedBacktrack(g)
-    constrained_backtrack_search.run()
+    if sys.argv[1] not in ["local", "backtrack"]:
+         raise ValueError("The following string is not equal to 'local' or 'backtrack': " + sys.argv[1])
+
+    g = Graph(sys.argv[2])
+
+    if sys.argv[1] == "local":
+        local_search = LocalSearch(g)
+        local_search.run()
+    else:
+        constrained_backtrack_search = MostConstrainedBacktrack(g)
+        constrained_backtrack_search.run()
     
 
 """
