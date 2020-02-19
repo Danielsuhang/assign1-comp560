@@ -82,9 +82,18 @@ class MostConstrainedBacktrack():
         # Keep Arc consistency here, only consider other available colors that do not violate this node's constraints
         # and also will not leave any neighbors with no colors
         available_colors = self.get_available_colors(node)
+
+        #check if neighbors will have a solution after this node is assigned, a shallow form of forward checking
+        continue_path = True
+        for neighbor in node.neighbors:
+            if len(self.get_available_colors(neighbor)) == 0:
+                continue_path = False
+
+        #if any neighbors don't have a solution or this node doesn't, don't continue
+        continue_path = continue_path and (not len(available_colors) == 0)
         
         # If there are no available colors, this solution is drawing dead. No reason to continue considering this solution
-        if len(available_colors) == 0:
+        if not continue_path:
             return False
 
         for color in available_colors:
@@ -99,12 +108,6 @@ class MostConstrainedBacktrack():
                 neighbor = neighborsToAssign.pop(0)
                 if neighbor.color == "":
                     success = self.assign_colors_recursive(neighbor) and success
-                
-
-            # Traverse most constrainted variable (if tie traverse lexagraphically first neighbors)
-            #for neighbor in sorted(node.neighbors, key=lambda neighbor_node : (len(self.get_available_colors(neighbor_node)), neighbor_node.name)):
-            #    if neighbor.color == "":
-            #        success = self.assign_colors_recursive(neighbor) and success
             
             # Success means we found a possible solution with this color assignment on this node
             if success: 
