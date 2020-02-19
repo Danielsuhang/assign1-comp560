@@ -79,7 +79,8 @@ class MostConstrainedBacktrack():
         # Each time this is called, we are searching a node:
         self._backtrack_steps += 1
 
-        # Keep Arc consistency here, only consider other available colors
+        # Keep Arc consistency here, only consider other available colors that do not violate this node's constraints
+        # and also will not leave any neighbors with no colors
         available_colors = self.get_available_colors(node)
         
         # If there are no available colors, this solution is drawing dead. No reason to continue considering this solution
@@ -114,8 +115,18 @@ class MostConstrainedBacktrack():
         return False
 
     #colors should be a set of all possible colors
-    def get_available_colors(self, node):
+    def get_available_colors_immediate(self, node):
         return list(self.possible_colors- set([n.color for n in node.neighbors]))
+    
+    def get_available_colors(self, node):
+        base_available_colors = self.get_available_colors_immediate(node)
+        #now we want to also keep in mind that any neighbors that only have one color available also means those colors can't be used
+        for neighbor in node.neighbors:
+            neighbor_immediate_available = self.get_available_colors_immediate(neighbor)
+            if len(neighbor_immediate_available) == 1:
+                base_available_colors.append(neighbor_immediate_available[0])
+
+        return base_available_colors
 
     def verify_graph_colors(self):
         num_searched = 0
