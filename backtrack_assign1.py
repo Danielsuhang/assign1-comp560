@@ -105,7 +105,7 @@ class MostConstrainedBacktrack():
         # Unable to find a solution with available colors for this node, reset node color to unexplored
         node.color = "" 
         return False
-
+    
     #colors should be a set of all possible colors
     def get_available_colors(self, node):
         return list(self.possible_colors- set([n.color for n in node.neighbors]))
