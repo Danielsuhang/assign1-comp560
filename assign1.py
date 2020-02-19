@@ -83,17 +83,7 @@ class MostConstrainedBacktrack():
         # and also will not leave any neighbors with no colors
         available_colors = self.get_available_colors(node)
 
-        #check if neighbors will have a solution after this node is assigned, a shallow form of forward checking
-        continue_path = True
-        for neighbor in node.neighbors:
-            if len(self.get_available_colors(neighbor)) == 0:
-                continue_path = False
-
-        #if any neighbors don't have a solution or this node doesn't, don't continue
-        continue_path = continue_path and (not len(available_colors) == 0)
-        
-        # If there are no available colors, this solution is drawing dead. No reason to continue considering this solution
-        if not continue_path:
+        if not self.should_continue_path_forward_checking(node, available_colors):
             return False
 
         for color in available_colors:
@@ -116,6 +106,17 @@ class MostConstrainedBacktrack():
         # Unable to find a solution with available colors for this node, reset node color to unexplored
         node.color = "" 
         return False
+    
+    def should_continue_path_forward_checking(self, node, available_colors):
+        #check if neighbors will have a solution after this node is assigned, a shallow form of forward checking
+        continue_path = True
+        for neighbor in node.neighbors:
+            if len(self.get_available_colors(neighbor)) == 0:
+                continue_path = False
+                break
+        #if any neighbors don't have a solution or this node doesn't, don't continue
+        return continue_path and (not len(available_colors) == 0)
+
 
     #colors should be a set of all possible colors
     def get_available_colors_immediate(self, node):
@@ -142,6 +143,7 @@ class MostConstrainedBacktrack():
         return True
     
     def test_most_constrained_sort(self, node):
+        """Helper method to simply test if our most constrained sorting works"""
         print (node.name + " sorted neighbors: ", end="")
         if (len(node.neighbors) == 0):
             print ("No Neighbors")
@@ -265,9 +267,9 @@ if __name__ == "__main__":
         local_search = LocalSearch(g)
         local_search.run()
     else:
+        steps = 0
         constrained_backtrack_search = MostConstrainedBacktrack(g)
         constrained_backtrack_search.run()
-    
 
 """
 Recurisvely give nodes in the graph colors by making copies of the nodes 
