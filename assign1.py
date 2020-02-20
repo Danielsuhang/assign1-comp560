@@ -123,14 +123,14 @@ class MostConstrainedBacktrack():
         return list(self.possible_colors- set([n.color for n in node.neighbors]))
     
     def get_available_colors(self, node):
-        base_available_colors = self.get_available_colors_immediate(node)
+        base_available_colors = set(self.get_available_colors_immediate(node))
         #now we want to also keep in mind that any neighbors that only have one color available also means those colors can't be used
         for neighbor in node.neighbors:
             neighbor_immediate_available = self.get_available_colors_immediate(neighbor)
             if len(neighbor_immediate_available) == 1:
-                base_available_colors.append(neighbor_immediate_available[0])
+                base_available_colors = base_available_colors - set(neighbor_immediate_available[0])
 
-        return base_available_colors
+        return list(base_available_colors)
 
     def verify_graph_colors(self):
         num_searched = 0
@@ -139,6 +139,7 @@ class MostConstrainedBacktrack():
             num_searched += 1
             for neighbor in node.neighbors:
                 if neighbor.color == node.color:
+                    print("Issue with: ", node.name, " and ", neighbor.name)
                     return False
         return True
     
